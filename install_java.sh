@@ -40,19 +40,19 @@ show_loading() {
 
 case "$VERSION" in
   8)
-    apt install -y openjdk-8-jdk > /dev/null 2>&1 &
+    apt install openjdk-8-jre-headless > /dev/null 2>&1 &
     show_loading
     ;;
   11)
-    apt install -y openjdk-11-jdk > /dev/null 2>&1 &
+    apt install openjdk-11-jre-headless > /dev/null 2>&1 &
     show_loading
     ;;
   17)
-    apt install -y openjdk-17-jdk > /dev/null 2>&1 &
+    apt install openjdk-17-jre-headless > /dev/null 2>&1 &
     show_loading
     ;;
   21)
-    apt install -y openjdk-21-jdk > /dev/null 2>&1 &
+    apt install openjdk-21-jre-headless > /dev/null 2>&1 &
     show_loading
     ;;
   *)
