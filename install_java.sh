@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Colores
 RED='\033[0;31m'
 ORANGE='\033[0;33m'
 WHITE='\033[1;37m'
@@ -24,41 +23,33 @@ fi
 VERSION="$1"
 ARCH=$(dpkg --print-architecture)
 
-BASE_URL="https://api.adoptium.net/v3/binary/latest/${VERSION}/ga/linux/${ARCH}/jdk/hotspot/normal/eclipse"
+echo -e "${WHITE}Actualizando paquetes...${NC}"
+apt update -y > /dev/null 2>&1
+apt install -y wget tar curl > /dev/null 2>&1
 
-show_loading() {
-  chars="/—\\|"
-  for ((i=0; i<15; i++)); do
-    for ((j=0; j<${#chars}; j++)); do
-      echo -ne "\r${ORANGE}Instalando${NC} ${chars:$j:1}"
-      sleep 0.1
-    done
-  done
-  echo -ne "\r"
-}
-
-sudo apt update -y > /dev/null 2>&1
-sudo apt install -y wget tar > /dev/null 2>&1
+echo -e "${WHITE}Instalando Java $VERSION...${NC}"
 
 mkdir -p /opt/java
+cd /opt/java || exit 1
 
-echo -e "${WHITE}Descargando Java $VERSION desde Adoptium...${NC}"
-wget -q --show-progress -O java.tar.gz "$BASE_URL"
+DOWNLOAD_URL=$(curl -s "https://api.adoptium.net/v3/assets/latest/$VERSION/ga?architecture=$ARCH&heap_size=normal&image_type=jdk&jvm_impl=hotspot&os=linux&vendor=eclipse" \
+| grep 'browser_download_url' | grep 'tar.gz' | cut -d '"' -f 4 | head -n 1)
 
-echo -e "${WHITE}Extrayendo Java...${NC}"
-tar -xzf java.tar.gz -C /opt/java
+if [ -z "$DOWNLOAD_URL" ]; then
+  echo -e "${RED}❌ No se pudo obtener el enlace de descarga para Java $VERSION.${NC}"
+  exit 1
+fi
+
+wget -q --show-progress -O java.tar.gz "$DOWNLOAD_URL"
+tar -xzf java.tar.gz
 rm java.tar.gz
 
-JAVA_FOLDER=$(find /opt/java -maxdepth 1 -type d -name "jdk-${VERSION}*" | head -n 1)
+JAVA_FOLDER=$(find . -maxdepth 1 -type d -name "jdk*" | head -n 1)
 
-sudo update-alternatives --install /usr/bin/java java "$JAVA_FOLDER/bin/java" 1
-sudo update-alternatives --install /usr/bin/javac javac "$JAVA_FOLDER/bin/javac" 1
-sudo update-alternatives --set java "$JAVA_FOLDER/bin/java"
-sudo update-alternatives --set javac "$JAVA_FOLDER/bin/javac"
+update-alternatives --install /usr/bin/java java "/opt/java/$JAVA_FOLDER/bin/java" 1
+update-alternatives --install /usr/bin/javac javac "/opt/java/$JAVA_FOLDER/bin/javac" 1
+update-alternatives --set java "/opt/java/$JAVA_FOLDER/bin/java"
+update-alternatives --set javac "/opt/java/$JAVA_FOLDER/bin/javac"
 
-show_loading
-
-# Confirmación
 echo -e "\n${WHITE}✔ Java $VERSION instalado correctamente.${NC}"
 java -version
-
