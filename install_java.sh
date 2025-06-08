@@ -25,17 +25,17 @@ ARCH=$(dpkg --print-architecture)
 
 echo -e "${WHITE}Actualizando paquetes...${NC}"
 apt update -y > /dev/null 2>&1
-apt install -y wget tar curl > /dev/null 2>&1
+apt install -y wget tar curl jq > /dev/null 2>&1
 
 echo -e "${WHITE}Instalando Java $VERSION...${NC}"
-
 mkdir -p /opt/java
 cd /opt/java || exit 1
 
-DOWNLOAD_URL=$(curl -s "https://api.adoptium.net/v3/assets/latest/$VERSION/ga?architecture=$ARCH&heap_size=normal&image_type=jdk&jvm_impl=hotspot&os=linux&vendor=eclipse" \
-| grep 'browser_download_url' | grep 'tar.gz' | cut -d '"' -f 4 | head -n 1)
+API_URL="https://api.adoptium.net/v3/assets/latest/${VERSION}/ga?architecture=${ARCH}&heap_size=normal&image_type=jdk&jvm_impl=hotspot&os=linux&vendor=eclipse"
 
-if [ -z "$DOWNLOAD_URL" ]; then
+DOWNLOAD_URL=$(curl -s "$API_URL" | jq -r '.[0].binaries[0].package.link')
+
+if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
   echo -e "${RED}❌ No se pudo obtener el enlace de descarga para Java $VERSION.${NC}"
   exit 1
 fi
