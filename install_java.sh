@@ -1,19 +1,25 @@
 #!/bin/bash
 
+# ====== CONFIGURACIÓN ======
+INSTALL_PATH="/opt/java"
+PROFILE_PATH="/etc/profile.d/java.sh"
+
+# ====== COLORES ======
 RED='\033[0;31m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
+# ====== VALIDACIÓN ======
 if [ -z "$1" ]; then
   echo -e "${RED}Uso:${NC} ./install_oracle_java.sh <8 | 11 | 17 | 21>"
   exit 1
 fi
 
 VERSION="$1"
-INSTALL_DIR="/opt/java"
-mkdir -p $INSTALL_DIR
-cd $INSTALL_DIR || exit 1
+mkdir -p "$INSTALL_PATH"
+cd "$INSTALL_PATH" || exit 1
 
+# ====== MAPA DE VERSIONES ======
 case $VERSION in
   8)
     JDK_VERSION="8u202"
@@ -45,26 +51,34 @@ case $VERSION in
     ;;
 esac
 
+# ====== DESCARGA ======
+echo -e "${WHITE}Descargando Oracle JDK $VERSION...${NC}"
 JDK_TAR="jdk-${JDK_VERSION}_linux-x64_bin.tar.gz"
 JDK_URL="https://download.oracle.com/otn-pub/java/jdk/${JDK_VERSION}+${JDK_BUILD}/${JDK_HASH}/${JDK_TAR}"
 
-echo -e "${WHITE}Descargando Oracle JDK $VERSION...${NC}"
 wget --no-cookies --no-check-certificate \
   --header "Cookie: oraclelicense=accept-securebackup-cookie" \
   -O "$JDK_TAR" "$JDK_URL"
 
 if [ ! -f "$JDK_TAR" ]; then
-  echo -e "${RED}❌ Descarga fallida. Verifica la conexión o los datos del JDK.${NC}"
+  echo -e "${RED}❌ No se pudo descargar Java $VERSION de Oracle.${NC}"
   exit 1
 fi
 
 tar -xzf "$JDK_TAR"
 rm "$JDK_TAR"
 
-update-alternatives --install /usr/bin/java java "$INSTALL_DIR/$FOLDER_NAME/bin/java" 1
-update-alternatives --install /usr/bin/javac javac "$INSTALL_DIR/$FOLDER_NAME/bin/javac" 1
-update-alternatives --set java "$INSTALL_DIR/$FOLDER_NAME/bin/java"
-update-alternatives --set javac "$INSTALL_DIR/$FOLDER_NAME/bin/javac"
+# ====== AÑADIR AL PATH GLOBAL ======
+echo -e "${WHITE}Agregando Java al PATH global...${NC}"
 
-echo -e "\n${WHITE}✔ Oracle Java $VERSION instalado correctamente.${NC}"
+cat > "$PROFILE_PATH" <<EOF
+export JAVA_HOME=$INSTALL_PATH/$FOLDER_NAME
+export PATH=\$JAVA_HOME/bin:\$PATH
+EOF
+
+chmod +x "$PROFILE_PATH"
+source "$PROFILE_PATH"
+
+# ====== COMPROBACIÓN ======
+echo -e "${WHITE}✔ Oracle Java $VERSION instalado correctamente.${NC}"
 java -version
