@@ -62,4 +62,8 @@ case "$VERSION" in
 esac
 
 echo -e "\n${WHITE}✔ Java $VERSION instalado correctamente.${NC}"
-java -version
+
+if ! java -version 2>&1 | grep -q "1\.${VERSION}"; then
+  echo -e "${RED}⚠ Java $VERSION fue instalado, pero no está seleccionado como predeterminado.${NC}"
+  echo -e "${WHITE}Usa:${NC} sudo update-alternatives --config java"
+fi
